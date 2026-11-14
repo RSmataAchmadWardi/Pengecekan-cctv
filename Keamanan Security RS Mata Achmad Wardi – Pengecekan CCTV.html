@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Keamanan Security RS Mata Achmad Wardi – Pengecekan CCTV</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eef1f4;--surface:#fff;--ink:#14202b;--muted:#5b6b7a;--line:#d5dce3;--accent:#0f4c81;--accent-ink:#fff;
+  --ok:#14804a;--ok-bg:#dcf3e6;--warn:#a85a00;--warn-bg:#fdebd0;--bad:#b3261e;--bad-bg:#fbdcd9;--idle:#5b6b7a;--idle-bg:#e3e8ed;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e151c;--surface:#16212b;--ink:#e7edf2;--muted:#93a4b3;--line:#27384a;--accent:#6fb3ee;--accent-ink:#0a1a28;
+  --ok:#52d189;--ok-bg:#123524;--warn:#f0a94a;--warn-bg:#3a2810;--bad:#ff8a80;--bad-bg:#42201d;--idle:#93a4b3;--idle-bg:#22313f;
+}}
+:root[data-theme="dark"]{
+  --bg:#0e151c;--surface:#16212b;--ink:#e7edf2;--muted:#93a4b3;--line:#27384a;--accent:#6fb3ee;--accent-ink:#0a1a28;
+  --ok:#52d189;--ok-bg:#123524;--warn:#f0a94a;--warn-bg:#3a2810;--bad:#ff8a80;--bad-bg:#42201d;--idle:#93a4b3;--idle-bg:#22313f;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+h1,h2,h3{font-family:"Archivo","Arial Narrow",sans-serif;margin:0;letter-spacing:-.01em}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 60px}
+header.top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:18px}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:44px;height:44px;border-radius:12px;background:var(--ink);display:grid;place-items:center;position:relative}
+.logo i{width:18px;height:18px;border-radius:50%;background:var(--bg);display:block;position:relative}
+.logo i::after{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--bad);animation:rec 1.6s ease-in-out infinite}
+@keyframes rec{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.logo i::after{animation:none}}
+h1{font-size:22px;font-weight:800;font-stretch:80%;line-height:1.2}
+.sub{color:var(--muted);font-size:13px}
+.btn{border:1px solid var(--line);background:var(--surface);padding:9px 14px;border-radius:8px;cursor:pointer;font-weight:500;min-height:40px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--bad)}
+.btn.small{padding:6px 10px;min-height:34px;font-size:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;border-left-width:5px;cursor:pointer;text-align:left}
+.stat b{display:block;font:800 30px/1.1 "Archivo",sans-serif}
+.stat span{color:var(--muted);font-size:13px}
+.stat.ok{border-left-color:var(--ok)}.stat.warn{border-left-color:var(--warn)}.stat.bad{border-left-color:var(--bad)}.stat.idle{border-left-color:var(--idle)}.stat.all{border-left-color:var(--accent)}
+.stat[aria-pressed="true"]{outline:2px solid var(--accent)}
+.tools{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.tools input{flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.cam{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.feed{height:84px;background:repeating-linear-gradient(0deg,rgba(255,255,255,.04) 0 2px,transparent 2px 4px),#16212b;color:#9fb2c3;position:relative;padding:10px 12px;display:flex;justify-content:space-between;align-items:flex-start;font:500 12px "IBM Plex Sans",monospace}
+.feed .id{color:#fff;font-weight:600}
+.led{display:inline-flex;gap:6px;align-items:center;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600}
+.led::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.s-ok{background:var(--ok-bg);color:var(--ok)}.s-warn{background:var(--warn-bg);color:var(--warn)}.s-bad{background:var(--bad-bg);color:var(--bad)}.s-idle{background:var(--idle-bg);color:var(--idle)}
+.body{padding:12px 14px;flex:1}
+.body h3{font-size:18px;font-weight:700}
+.meta{color:var(--muted);font-size:13px;margin-top:2px}
+.note{margin-top:8px;font-size:13px;background:var(--bg);border-radius:6px;padding:6px 9px}
+.late{color:var(--warn);font-weight:600;font-size:12px;margin-top:6px}
+.acts{display:flex;gap:6px;padding:10px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+.acts .primary{flex:1}
+.empty{grid-column:1/-1;text-align:center;padding:48px 16px;background:var(--surface);border:1px dashed var(--line);border-radius:12px}
+.empty h2{font-size:20px;margin-bottom:6px}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:0;width:min(520px,calc(100% - 24px));max-height:90vh}
+dialog::backdrop{background:rgba(5,12,20,.6)}
+.dh{padding:16px 18px 8px;display:flex;justify-content:space-between;align-items:start;gap:10px}
+.dh h2{font-size:21px}
+.db{padding:6px 18px 12px;overflow:auto;max-height:62vh}
+.df{padding:12px 18px 16px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid var(--line)}
+label.f{display:block;margin:10px 0 4px;font-weight:500;font-size:14px}
+.in{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.chk{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;margin-top:8px;cursor:pointer;min-height:48px}
+.chk input{width:22px;height:22px;accent-color:var(--ok);flex:none}
+.chk:has(input:checked){background:var(--ok-bg);border-color:var(--ok)}
+.chk small{display:block;color:var(--muted)}
+.hist{border-left:3px solid var(--line);padding:2px 0 2px 12px;margin:12px 0}
+.hist .fails{color:var(--bad);font-size:13px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:14px;z-index:99;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+.storage{margin-top:26px;font-size:13px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><div class="logo" aria-hidden="true"><i></i></div>
+      <div><h1>Keamanan Security RS Mata Achmad Wardi</h1><div class="sub">Pengecekan CCTV. Data tersimpan di browser ini.</div></div></div>
+    <div class="row">
+      <button class="btn primary" id="add" type="button">Tambah kamera</button>
+    </div>
+  </header>
+
+  <section class="stats" id="stats" aria-label="Ringkasan status"></section>
+  <div class="tools"><input id="q" type="search" placeholder="Cari nama atau lokasi kamera" aria-label="Cari kamera"></div>
+  <main class="grid" id="grid"></main>
+  <p class="storage" id="storage"></p>
+</div>
+
+<dialog id="dForm"><form method="dialog" id="fForm">
+  <div class="dh"><h2 id="fTitle">Tambah kamera</h2></div>
+  <div class="db">
+    <label class="f" for="fWho">Nama petugas</label><input class="in" id="fWho" required maxlength="50" placeholder="Contoh: Budi Santoso">
+    <label class="f" for="fName">Nama kamera</label><input class="in" id="fName" required maxlength="60" placeholder="Contoh: CAM-01 Lobi">
+    <label class="f" for="fLoc">Lokasi</label><input class="in" id="fLoc" required maxlength="80" placeholder="Contoh: Pintu masuk utama">
+    
+    
+    <label class="f" for="fTime">Jam</label><input class="in" id="fTime" type="time" required>
+    <label class="f" for="fDesc">Keterangan</label><textarea class="in" id="fDesc" rows="3" maxlength="300" placeholder="Contoh: terpasang di atas pintu, menghadap parkiran"></textarea>
+  </div>
+  <div class="df"><button class="btn danger" id="fDel" type="button" hidden>Hapus kamera</button><button class="btn" value="cancel" formnovalidate>Batal</button><button class="btn primary" value="ok">Simpan</button></div>
+</form></dialog>
+
+<dialog id="dCheck"><form method="dialog" id="fCheck">
+  <div class="dh"><div><h2 id="cTitle">Cek kamera</h2><div class="sub" id="cSub"></div></div></div>
+  <div class="db">
+    <div id="cList"></div>
+    <label class="f" for="cWho">Nama petugas</label><input class="in" id="cWho" required maxlength="50">
+    <label class="f" for="cTime">Jam pengecekan</label><input class="in" id="cTime" type="time" required>
+    <label class="f" for="cNote">Keterangan (opsional)</label><textarea class="in" id="cNote" rows="3" maxlength="300" placeholder="Misalnya: lensa berdebu, perlu dibersihkan"></textarea>
+  </div>
+  <div class="df"><button class="btn" value="cancel" formnovalidate>Batal</button><button class="btn primary" value="ok">Simpan pengecekan</button></div>
+</form></dialog>
+
+<dialog id="dHist"><form method="dialog">
+  <div class="dh"><div><h2 id="hTitle">Riwayat</h2><div class="sub" id="hSub"></div></div></div>
+  <div class="db" id="hList"></div>
+  <div class="df"><button class="btn primary" value="ok">Tutup</button></div>
+</form></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+var KEY="ronda-cctv-v1", STALE_DAYS=7;
+var CHECKS=[
+  {k:"power",t:"Kamera menyala",d:"Lampu indikator hidup, tidak mati sendiri"},
+  {k:"image",t:"Gambar jernih",d:"Tidak buram, tidak ada garis atau bintik"},
+  {k:"view",t:"Sudut pandang benar",d:"Area yang dipantau terlihat penuh"},
+  {k:"lens",t:"Lensa dan casing bersih",d:"Tanpa debu, sarang laba-laba, atau retak"},
+  {k:"rec",t:"Rekaman tersimpan",d:"Rekaman terbaru ada di DVR atau NVR"},
+  {k:"night",t:"Mode malam berfungsi",d:"Infra merah menyala saat gelap"},
+  {k:"cable",t:"Kabel dan dudukan aman",d:"Kabel rapi, braket kencang"}
+];
+var S={cams:[],who:"",theme:""}, filter="all", editId=null, checkId=null, canSave=true;
+
+function load(){
+  try{var r=localStorage.getItem(KEY);if(r){var d=JSON.parse(r);if(d&&Array.isArray(d.cams))S=Object.assign(S,d)}}catch(e){canSave=false}
+}
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(S));canSave=true}catch(e){canSave=false}
+  renderStorage();
+}
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function uid(){return "c"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function hm(){var d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+function atTime(v){var d=new Date(),p=(v||"").split(":");if(p.length===2)d.setHours(+p[0],+p[1],0,0);return d.getTime()}
+function fmt(t){return new Date(t).toLocaleString("id-ID",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}
+function toast(m){var t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(function(){t.classList.remove("show")},2200)}
+
+function status(c){
+  var h=c.history&&c.history[0];
+  if(!h)return "idle";
+  if(!h.checks.power)return "bad";
+  for(var i=0;i<CHECKS.length;i++)if(!h.checks[CHECKS[i].k])return "warn";
+  return "ok";
+}
+var LABEL={ok:"Normal",warn:"Perlu perhatian",bad:"Mati",idle:"Belum dicek"};
+function stale(c){var h=c.history&&c.history[0];return h&&(Date.now()-h.at)>STALE_DAYS*864e5}
+function fails(h){return CHECKS.filter(function(x){return !h.checks[x.k]}).map(function(x){return x.t})}
+
+function render(){
+  var counts={all:S.cams.length,ok:0,warn:0,bad:0,idle:0};
+  S.cams.forEach(function(c){counts[status(c)]++});
+  var defs=[["all","Semua kamera"],["ok","Normal"],["warn","Perlu perhatian"],["bad","Mati"],["idle","Belum dicek"]];
+  $("stats").innerHTML=defs.map(function(d){
+    return '<button type="button" class="stat '+d[0]+'" data-f="'+d[0]+'" aria-pressed="'+(filter===d[0])+'"><b>'+counts[d[0]]+'</b><span>'+d[1]+'</span></button>'}).join("");
+  var q=$("q").value.trim().toLowerCase();
+  var list=S.cams.filter(function(c){
+    return (filter==="all"||status(c)===filter)&&(!q||(c.name+" "+c.loc).toLowerCase().indexOf(q)>-1)});
+  if(!S.cams.length){
+    $("grid").innerHTML='<div class="empty"><h2>Belum ada kamera</h2><p class="sub">Tekan tombol Tambah kamera di bagian atas untuk memulai pengecekan.</p></div>';
+  }else if(!list.length){
+    $("grid").innerHTML='<div class="empty"><h2>Tidak ada hasil</h2><p class="sub">Ubah kata pencarian atau pilih filter lain.</p></div>';
+  }else{
+    $("grid").innerHTML=list.map(function(c){
+      var s=status(c),h=c.history[0];
+      return '<article class="cam"><div class="feed"><span class="id">'+esc(c.name)+'</span><span class="led s-'+s+'">'+LABEL[s]+'</span></div>'+
+        '<div class="body"><h3>'+esc(c.name)+'</h3><div class="meta">'+esc(c.loc)+'</div>'+
+        (c.petugas?'<div class="meta">Petugas: '+esc(c.petugas)+(c.time?' · Jam '+esc(c.time):'')+'</div>':'')+(c.desc?'<div class="note">'+esc(c.desc)+'</div>':'')+
+        (h?'<div class="meta">Dicek '+fmt(h.at)+' oleh '+esc(h.who)+'</div>':'<div class="meta">Belum pernah dicek</div>')+
+        (h&&fails(h).length?'<div class="note">Bermasalah: '+esc(fails(h).join(", "))+'</div>':'')+
+        (h&&h.note?'<div class="note">'+esc(h.note)+'</div>':'')+
+        (stale(c)?'<div class="late">Sudah lebih dari '+STALE_DAYS+' hari, saatnya dicek lagi</div>':'')+
+        '</div><div class="acts"><button class="btn primary small" type="button" data-act="check" data-id="'+c.id+'">Mulai cek</button>'+
+        '<button class="btn small" type="button" data-act="hist" data-id="'+c.id+'">Riwayat ('+c.history.length+')</button>'+
+        '<button class="btn small" type="button" data-act="edit" data-id="'+c.id+'">Ubah</button></div></article>';
+    }).join("");
+  }
+  renderStorage();
+}
+function renderStorage(){
+  $("storage").textContent=canSave?"Tersimpan otomatis di browser ini. Data tidak hilang saat halaman ditutup.":"Browser memblokir penyimpanan. Data hanya bertahan selama halaman ini terbuka. Matikan mode privat agar bisa tersimpan.";
+}
+function find(id){return S.cams.filter(function(c){return c.id===id})[0]}
+
+function openForm(id){
+  editId=id||null;var c=id?find(id):null;
+  $("fTitle").textContent=c?"Ubah kamera":"Tambah kamera";
+  $("fWho").value=c?(c.petugas||""):(S.who||"");$("fName").value=c?c.name:"";$("fLoc").value=c?c.loc:"";$("fTime").value=c?(c.time||hm()):hm();$("fDesc").value=c?(c.desc||""):"";
+  $("fDel").hidden=!c;$("dForm").showModal();$("fWho").focus();
+}
+function openCheck(id){
+  checkId=id;var c=find(id);
+  $("cTitle").textContent=c.name;$("cSub").textContent=c.loc+" · centang yang kondisinya baik";
+  $("cList").innerHTML=CHECKS.map(function(x){
+    return '<label class="chk"><input type="checkbox" data-k="'+x.k+'" checked><span>'+x.t+'<small>'+x.d+'</small></span></label>'}).join("");
+  $("cWho").value=c.petugas||S.who||"";$("cTime").value=hm();$("cNote").value="";$("dCheck").showModal();
+}
+function openHist(id){
+  var c=find(id);$("hTitle").textContent=c.name;$("hSub").textContent=c.loc;
+  $("hList").innerHTML=c.history.length?c.history.map(function(h){
+    var f=fails(h);
+    return '<div class="hist"><b>'+fmt(h.at)+'</b> · '+esc(h.who)+'<br>'+
+      (f.length?'<span class="fails">Bermasalah: '+esc(f.join(", "))+'</span>':'<span style="color:var(--ok)">Semua pemeriksaan baik</span>')+
+      (h.note?'<div class="sub">'+esc(h.note)+'</div>':'')+'</div>'}).join(""):'<p class="sub">Belum ada riwayat pengecekan.</p>';
+  $("dHist").showModal();
+}
+
+$("add").onclick=function(){openForm()};
+$("q").oninput=render;
+$("stats").onclick=function(e){var b=e.target.closest("[data-f]");if(b){filter=b.dataset.f;render()}};
+$("grid").onclick=function(e){
+  var b=e.target.closest("[data-act]");if(!b)return;
+  var a=b.dataset.act,id=b.dataset.id;
+  if(a==="add")openForm();else if(a==="edit")openForm(id);else if(a==="check")openCheck(id);else if(a==="hist")openHist(id);
+};
+$("fForm").onsubmit=function(e){
+  if(e.submitter&&e.submitter.value!=="ok")return;
+  var name=$("fName").value.trim(),loc=$("fLoc").value.trim(),who=$("fWho").value.trim(),time=$("fTime").value,desc=$("fDesc").value.trim();
+  if(!name||!loc||!who)return;
+  S.who=who;
+  if(editId){var c=find(editId);c.name=name;c.loc=loc;c.petugas=who;c.time=time;c.desc=desc;toast("Kamera diperbarui")}
+  else{S.cams.push({id:uid(),name:name,loc:loc,petugas:who,time:time,desc:desc,history:[]});toast("Kamera ditambahkan")}
+  save();render();
+};
+$("fDel").onclick=function(){
+  var c=find(editId);
+  if(c&&confirm("Hapus "+c.name+" beserta seluruh riwayatnya?")){
+    S.cams=S.cams.filter(function(x){return x.id!==editId});save();$("dForm").close();render();toast("Kamera dihapus");
+  }
+};
+$("fCheck").onsubmit=function(e){
+  if(e.submitter&&e.submitter.value!=="ok")return;
+  var c=find(checkId),checks={};
+  document.querySelectorAll("#cList input").forEach(function(i){checks[i.dataset.k]=i.checked});
+  S.who=$("cWho").value.trim();
+  c.history.unshift({at:atTime($("cTime").value),who:S.who,checks:checks,note:$("cNote").value.trim()});
+  if(c.history.length>100)c.history.length=100;
+  save();render();toast("Pengecekan disimpan");
+};
+load();render();
+})();
+</script>
+</body>
+</html>
