@@ -73,9 +73,15 @@ dialog::backdrop{background:rgba(5,12,20,.6)}
 .df{padding:12px 18px 16px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid var(--line)}
 label.f{display:block;margin:10px 0 4px;font-weight:500;font-size:14px}
 .in{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
-.chk{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;margin-top:8px;cursor:pointer;min-height:48px}
-.chk input{width:22px;height:22px;accent-color:var(--ok);flex:none}
+/* Style Baru untuk Checkbox Custom */
+.chk{display:flex;align-items:center;gap:12px;padding:11px 12px;border:2px solid var(--line);border-radius:10px;margin-top:8px;cursor:pointer;min-height:48px;transition:all 0.2s ease}
 .chk:has(input:checked){background:var(--ok-bg);border-color:var(--ok)}
+.chk:has(input:not(:checked)){background:var(--bad-bg);border-color:var(--bad)}
+.chk input{width:24px;height:24px;flex:none;appearance:none;border:2px solid var(--muted);border-radius:6px;cursor:pointer;position:relative;transition:all 0.2s ease}
+.chk input:checked{background:var(--ok);border-color:var(--ok)}
+.chk input:checked::after{content:"✓";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:white;font-size:16px;font-weight:bold}
+.chk input:not(:checked){background:var(--bad);border-color:var(--bad)}
+.chk input:not(:checked)::after{content:"✕";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:white;font-size:16px;font-weight:bold}
 .chk small{display:block;color:var(--muted)}
 .hist{border-left:3px solid var(--line);padding:2px 0 2px 12px;margin:12px 0}
 .hist .fails{color:var(--bad);font-size:13px}
@@ -130,14 +136,10 @@ label.f{display:block;margin:10px 0 4px;font-weight:500;font-size:14px}
 </form></dialog>
 <div class="toast" id="toast" role="status"></div>
 
-<!-- ================= FIREBASE SDK ================= -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-/* ============================================================
-   >>> GANTI BAGIAN INI DENGAN KONFIGURASI FIREBASE ANDA <<<
-   ============================================================ */
 const firebaseConfig = {
   apiKey: "AIzaSyDZgQpmR4dhfxuTYw4N749Cf4PJ1UcSqoE",
   authDomain: "planning-with-ai-bcb63.firebaseapp.com",
@@ -147,8 +149,6 @@ const firebaseConfig = {
   messagingSenderId: "852009949932",
   appId: "1:852009949932:web:4a4b626ceee3f2e0c623c9"
 };
-;
-/* ============================================================ */
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -156,13 +156,13 @@ const DATA_REF = ref(db, 'ronda-cctv');
 
 var STALE_DAYS=7;
 var CHECKS=[
-  {k:"power",t:"Kamera menyala",d:"Lampu indikator hidup, tidak mati sendiri"},
-  {k:"image",t:"Gambar jernih",d:"Tidak buram, tidak ada garis atau bintik"},
-  {k:"view",t:"Sudut pandang benar",d:"Area yang dipantau terlihat penuh"},
-  {k:"lens",t:"Lensa dan casing bersih",d:"Tanpa debu, sarang laba-laba, atau retak"},
-  {k:"rec",t:"Rekaman tersimpan",d:"Rekaman terbaru ada di DVR atau NVR"},
-  {k:"night",t:"Mode malam berfungsi",d:"Infra merah menyala saat gelap"},
-  {k:"cable",t:"Kabel dan dudukan aman",d:"Kabel rapi, braket kencang"}
+  {k:"power",t:"Kamera ",d:""},
+  {k:"image",t:"Gambar ",d:""},
+  {k:"view",t:"Sudut pandang ",d:""},
+  {k:"lens",t:"Lensa dan casing b",d:""},
+  {k:"rec",t:"Rekaman tersimpan",d:""},
+  {k:"night",t:"Mode malam ",d:""},
+  {k:"cable",t:"Kabel dan dudukan ",d:""}
 ];
 var S={cams:[],who:""}, filter="all", editId=null, checkId=null;
 
@@ -225,7 +225,7 @@ function openForm(id){
 }
 function openCheck(id){
   checkId=id;var c=find(id);
-  $("cTitle").textContent=c.name;$("cSub").textContent=c.loc+" · centang yang kondisinya baik";
+  $("cTitle").textContent=c.name;$("cSub").textContent=c.loc+" · centang kondisi baik, hilangkan centang jika mati/rusak";
   $("cList").innerHTML=CHECKS.map(function(x){
     return '<label class="chk"><input type="checkbox" data-k="'+x.k+'" checked><span>'+x.t+'<small>'+x.d+'</small></span></label>'}).join("");
   $("cWho").value=c.petugas||S.who||"";$("cTime").value=hm();$("cNote").value="";$("dCheck").showModal();
@@ -241,7 +241,6 @@ function openHist(id){
   $("dHist").showModal();
 }
 
-/* ============ FUNGSI SIMPAN KE FIREBASE ============ */
 async function saveToCloud(){
   try{
     await set(DATA_REF, S);
@@ -253,7 +252,6 @@ async function saveToCloud(){
   }
 }
 
-/* ============ LISTENER REAL-TIME ============ */
 onValue(DATA_REF, function(snapshot){
   var data = snapshot.val();
   if(data && Array.isArray(data.cams)){
@@ -268,7 +266,6 @@ onValue(DATA_REF, function(snapshot){
   $("storage").textContent = "Gagal terhubung ke Firebase: "+error.message;
 });
 
-/* ============ EVENT HANDLERS ============ */
 $("add").onclick=function(){openForm()};
 $("q").oninput=render;
 $("stats").onclick=function(e){var b=e.target.closest("[data-f]");if(b){filter=b.dataset.f;render()}};
