@@ -88,7 +88,7 @@ label.f{display:block;margin:10px 0 4px;font-weight:500;font-size:14px}
 <div class="wrap">
   <header class="top">
     <div class="brand"><div class="logo" aria-hidden="true"><i></i></div>
-      <div><h1>Keamanan Security RS Mata Achmad Wardi</h1><div class="sub">Pengecekan CCTV. Data tersimpan di browser ini.</div></div></div>
+      <div><h1>Keamanan Security RS Mata Achmad Wardi</h1><div class="sub" id="subtitle">Pengecekan CCTV. Data tersimpan di cloud.</div></div></div>
     <div class="row">
       <button class="btn primary" id="add" type="button">Tambah kamera</button>
     </div>
@@ -106,8 +106,6 @@ label.f{display:block;margin:10px 0 4px;font-weight:500;font-size:14px}
     <label class="f" for="fWho">Nama petugas</label><input class="in" id="fWho" required maxlength="50" placeholder="Contoh: Budi Santoso">
     <label class="f" for="fName">Nama kamera</label><input class="in" id="fName" required maxlength="60" placeholder="Contoh: CAM-01 Lobi">
     <label class="f" for="fLoc">Lokasi</label><input class="in" id="fLoc" required maxlength="80" placeholder="Contoh: Pintu masuk utama">
-    
-    
     <label class="f" for="fTime">Jam</label><input class="in" id="fTime" type="time" required>
     <label class="f" for="fDesc">Keterangan</label><textarea class="in" id="fDesc" rows="3" maxlength="300" placeholder="Contoh: terpasang di atas pintu, menghadap parkiran"></textarea>
   </div>
@@ -132,9 +130,31 @@ label.f{display:block;margin:10px 0 4px;font-weight:500;font-size:14px}
 </form></dialog>
 <div class="toast" id="toast" role="status"></div>
 
-<script>
-(function(){
-var KEY="ronda-cctv-v1", STALE_DAYS=7;
+<!-- ================= FIREBASE SDK ================= -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+/* ============================================================
+   >>> GANTI BAGIAN INI DENGAN KONFIGURASI FIREBASE ANDA <<<
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyDZgQpmR4dhfxuTYw4N749Cf4PJ1UcSqoE",
+  authDomain: "planning-with-ai-bcb63.firebaseapp.com",
+  databaseURL: "https://planning-with-ai-bcb63-default-rtdb.firebaseio.com",
+  projectId: "planning-with-ai-bcb63",
+  storageBucket: "planning-with-ai-bcb63.firebasestorage.app",
+  messagingSenderId: "852009949932",
+  appId: "1:852009949932:web:4a4b626ceee3f2e0c623c9"
+};
+;
+/* ============================================================ */
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const DATA_REF = ref(db, 'ronda-cctv');
+
+var STALE_DAYS=7;
 var CHECKS=[
   {k:"power",t:"Kamera menyala",d:"Lampu indikator hidup, tidak mati sendiri"},
   {k:"image",t:"Gambar jernih",d:"Tidak buram, tidak ada garis atau bintik"},
@@ -144,15 +164,8 @@ var CHECKS=[
   {k:"night",t:"Mode malam berfungsi",d:"Infra merah menyala saat gelap"},
   {k:"cable",t:"Kabel dan dudukan aman",d:"Kabel rapi, braket kencang"}
 ];
-var S={cams:[],who:"",theme:""}, filter="all", editId=null, checkId=null, canSave=true;
+var S={cams:[],who:""}, filter="all", editId=null, checkId=null;
 
-function load(){
-  try{var r=localStorage.getItem(KEY);if(r){var d=JSON.parse(r);if(d&&Array.isArray(d.cams))S=Object.assign(S,d)}}catch(e){canSave=false}
-}
-function save(){
-  try{localStorage.setItem(KEY,JSON.stringify(S));canSave=true}catch(e){canSave=false}
-  renderStorage();
-}
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function uid(){return "c"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
@@ -164,13 +177,13 @@ function toast(m){var t=$("toast");t.textContent=m;t.classList.add("show");clear
 function status(c){
   var h=c.history&&c.history[0];
   if(!h)return "idle";
-  if(!h.checks.power)return "bad";
+  if(!h.checks||!h.checks.power)return "bad";
   for(var i=0;i<CHECKS.length;i++)if(!h.checks[CHECKS[i].k])return "warn";
   return "ok";
 }
 var LABEL={ok:"Normal",warn:"Perlu perhatian",bad:"Mati",idle:"Belum dicek"};
 function stale(c){var h=c.history&&c.history[0];return h&&(Date.now()-h.at)>STALE_DAYS*864e5}
-function fails(h){return CHECKS.filter(function(x){return !h.checks[x.k]}).map(function(x){return x.t})}
+function fails(h){if(!h.checks)return [];return CHECKS.filter(function(x){return !h.checks[x.k]}).map(function(x){return x.t})}
 
 function render(){
   var counts={all:S.cams.length,ok:0,warn:0,bad:0,idle:0};
@@ -187,7 +200,7 @@ function render(){
     $("grid").innerHTML='<div class="empty"><h2>Tidak ada hasil</h2><p class="sub">Ubah kata pencarian atau pilih filter lain.</p></div>';
   }else{
     $("grid").innerHTML=list.map(function(c){
-      var s=status(c),h=c.history[0];
+      var s=status(c),h=c.history&&c.history[0];
       return '<article class="cam"><div class="feed"><span class="id">'+esc(c.name)+'</span><span class="led s-'+s+'">'+LABEL[s]+'</span></div>'+
         '<div class="body"><h3>'+esc(c.name)+'</h3><div class="meta">'+esc(c.loc)+'</div>'+
         (c.petugas?'<div class="meta">Petugas: '+esc(c.petugas)+(c.time?' · Jam '+esc(c.time):'')+'</div>':'')+(c.desc?'<div class="note">'+esc(c.desc)+'</div>':'')+
@@ -196,14 +209,11 @@ function render(){
         (h&&h.note?'<div class="note">'+esc(h.note)+'</div>':'')+
         (stale(c)?'<div class="late">Sudah lebih dari '+STALE_DAYS+' hari, saatnya dicek lagi</div>':'')+
         '</div><div class="acts"><button class="btn primary small" type="button" data-act="check" data-id="'+c.id+'">Mulai cek</button>'+
-        '<button class="btn small" type="button" data-act="hist" data-id="'+c.id+'">Riwayat ('+c.history.length+')</button>'+
+        '<button class="btn small" type="button" data-act="hist" data-id="'+c.id+'">Riwayat ('+((c.history&&c.history.length)||0)+')</button>'+
         '<button class="btn small" type="button" data-act="edit" data-id="'+c.id+'">Ubah</button></div></article>';
     }).join("");
   }
-  renderStorage();
-}
-function renderStorage(){
-  $("storage").textContent=canSave?"Tersimpan otomatis di browser ini. Data tidak hilang saat halaman ditutup.":"Browser memblokir penyimpanan. Data hanya bertahan selama halaman ini terbuka. Matikan mode privat agar bisa tersimpan.";
+  $("storage").textContent="Tersinkronisasi real-time via Firebase. Data aman di cloud.";
 }
 function find(id){return S.cams.filter(function(c){return c.id===id})[0]}
 
@@ -222,7 +232,8 @@ function openCheck(id){
 }
 function openHist(id){
   var c=find(id);$("hTitle").textContent=c.name;$("hSub").textContent=c.loc;
-  $("hList").innerHTML=c.history.length?c.history.map(function(h){
+  var hist=c.history||[];
+  $("hList").innerHTML=hist.length?hist.map(function(h){
     var f=fails(h);
     return '<div class="hist"><b>'+fmt(h.at)+'</b> · '+esc(h.who)+'<br>'+
       (f.length?'<span class="fails">Bermasalah: '+esc(f.join(", "))+'</span>':'<span style="color:var(--ok)">Semua pemeriksaan baik</span>')+
@@ -230,6 +241,34 @@ function openHist(id){
   $("dHist").showModal();
 }
 
+/* ============ FUNGSI SIMPAN KE FIREBASE ============ */
+async function saveToCloud(){
+  try{
+    await set(DATA_REF, S);
+    return true;
+  }catch(e){
+    console.error("Gagal simpan:", e);
+    toast("Gagal simpan ke cloud: "+e.message);
+    return false;
+  }
+}
+
+/* ============ LISTENER REAL-TIME ============ */
+onValue(DATA_REF, function(snapshot){
+  var data = snapshot.val();
+  if(data && Array.isArray(data.cams)){
+    S = {cams:data.cams, who:data.who||""};
+  }else{
+    S = {cams:[], who:""};
+  }
+  render();
+  $("subtitle").textContent = "Pengecekan CCTV. Data tersinkronisasi real-time.";
+}, function(error){
+  console.error("Listener error:", error);
+  $("storage").textContent = "Gagal terhubung ke Firebase: "+error.message;
+});
+
+/* ============ EVENT HANDLERS ============ */
 $("add").onclick=function(){openForm()};
 $("q").oninput=render;
 $("stats").onclick=function(e){var b=e.target.closest("[data-f]");if(b){filter=b.dataset.f;render()}};
@@ -238,32 +277,44 @@ $("grid").onclick=function(e){
   var a=b.dataset.act,id=b.dataset.id;
   if(a==="add")openForm();else if(a==="edit")openForm(id);else if(a==="check")openCheck(id);else if(a==="hist")openHist(id);
 };
-$("fForm").onsubmit=function(e){
+
+$("fForm").onsubmit=async function(e){
   if(e.submitter&&e.submitter.value!=="ok")return;
+  e.preventDefault();
   var name=$("fName").value.trim(),loc=$("fLoc").value.trim(),who=$("fWho").value.trim(),time=$("fTime").value,desc=$("fDesc").value.trim();
   if(!name||!loc||!who)return;
   S.who=who;
-  if(editId){var c=find(editId);c.name=name;c.loc=loc;c.petugas=who;c.time=time;c.desc=desc;toast("Kamera diperbarui")}
-  else{S.cams.push({id:uid(),name:name,loc:loc,petugas:who,time:time,desc:desc,history:[]});toast("Kamera ditambahkan")}
-  save();render();
+  if(editId){
+    var c=find(editId);
+    c.name=name;c.loc=loc;c.petugas=who;c.time=time;c.desc=desc;
+  }else{
+    S.cams.push({id:uid(),name:name,loc:loc,petugas:who,time:time,desc:desc,history:[]});
+  }
+  var ok = await saveToCloud();
+  if(ok){ $("dForm").close(); toast(editId?"Kamera diperbarui":"Kamera ditambahkan"); }
 };
-$("fDel").onclick=function(){
+
+$("fDel").onclick=async function(){
   var c=find(editId);
   if(c&&confirm("Hapus "+c.name+" beserta seluruh riwayatnya?")){
-    S.cams=S.cams.filter(function(x){return x.id!==editId});save();$("dForm").close();render();toast("Kamera dihapus");
+    S.cams=S.cams.filter(function(x){return x.id!==editId});
+    var ok = await saveToCloud();
+    if(ok){ $("dForm").close(); toast("Kamera dihapus"); }
   }
 };
-$("fCheck").onsubmit=function(e){
+
+$("fCheck").onsubmit=async function(e){
   if(e.submitter&&e.submitter.value!=="ok")return;
+  e.preventDefault();
   var c=find(checkId),checks={};
   document.querySelectorAll("#cList input").forEach(function(i){checks[i.dataset.k]=i.checked});
   S.who=$("cWho").value.trim();
+  if(!c.history) c.history=[];
   c.history.unshift({at:atTime($("cTime").value),who:S.who,checks:checks,note:$("cNote").value.trim()});
   if(c.history.length>100)c.history.length=100;
-  save();render();toast("Pengecekan disimpan");
+  var ok = await saveToCloud();
+  if(ok){ $("dCheck").close(); toast("Pengecekan disimpan"); }
 };
-load();render();
-})();
 </script>
 </body>
 </html>
